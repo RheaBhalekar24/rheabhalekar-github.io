@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Quadrotor PD Control project by Rhea Bhalekar: cascaded position and attitude control, trajectory generation, tracking experiments, gain tuning and RMSE analysis." />
+  <title>Quadrotor PD Control | Rhea Bhalekar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav container">
+      <a class="brand" href="#home">Quadrotor PD Control</a>
+      <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+      <div class="nav-links">
+        <a href="#problem">Problem</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#trajectories">Trajectories</a>
+        <a href="#experiments">Experiments</a>
+        <a href="#results">Results</a>
+        <a href="#repo">Repository</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="home">
+    <section class="hero container">
+      <div class="hero-copy reveal">
+        <p class="eyebrow">RBE 502 Robot Control · Crazyflie Quadrotor · PD Control</p>
+        <h1>Designing a cascaded PD controller for quadrotor hovering and trajectory tracking.</h1>
+        <p class="hero-text">
+          This project builds a complete quadrotor control pipeline: first stabilizing the robot at target hover points, then generating circular and diamond trajectories, and finally tracking those paths while studying how gain tuning and trajectory speed affect performance.
+        </p>
+        <div class="hero-actions">
+          <a class="btn primary" href="https://github.com/RheaBhalekar24/Quadrotor-PD-Control" target="_blank" rel="noreferrer">View GitHub Repo</a>
+          <a class="btn secondary" href="#results">See Results</a>
+        </div>
+      </div>
+      <div class="hero-visual reveal">
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
+        <div class="drone" aria-label="Animated quadrotor illustration">
+          <span class="arm arm-x"></span>
+          <span class="arm arm-y"></span>
+          <span class="rotor r1"></span>
+          <span class="rotor r2"></span>
+          <span class="rotor r3"></span>
+          <span class="rotor r4"></span>
+          <span class="core"></span>
+        </div>
+        <div class="status-card">
+          <span class="pulse"></span>
+          Tracking loop active
+        </div>
+      </div>
+    </section>
+
+    <section class="stats container reveal">
+      <article><span>3</span><p>Project phases</p></article>
+      <article><span>2</span><p>Test trajectories</p></article>
+      <article><span>0.0092 m</span><p>Diamond baseline RMSE</p></article>
+      <article><span>0.0127 m</span><p>Circle baseline RMSE</p></article>
+    </section>
+
+    <section id="problem" class="section container">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Problem Statement</p>
+        <h2>Navigate a restricted airspace and hover at a commanded destination.</h2>
+        <p>
+          The goal is to design controllers and a path planning system for a quadrotor. Given a destination or desired trajectory, the robot must reach the target, stabilize, and track the requested motion using feedback control.
+        </p>
+      </div>
+      <div class="grid two">
+        <article class="card reveal">
+          <h3>Rigid-body model</h3>
+          <p>
+            The quadrotor is modeled with an inertial frame and a body-fixed frame attached to the center of mass. Translational motion is driven by gravity and the total thrust from four rotors, while rotational motion is driven by roll, pitch, and yaw moments.
+          </p>
+        </article>
+        <article class="card reveal">
+          <h3>Control challenge</h3>
+          <p>
+            A quadrotor can only create thrust along its body z-axis, so the controller must compute both the total thrust magnitude and the desired attitude that points the thrust vector in the direction needed for motion.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="section dark-section">
+      <div class="container">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Control Architecture</p>
+          <h2>Cascaded outer-loop position control and inner-loop attitude control.</h2>
+        </div>
+        <div class="architecture reveal">
+          <div class="block">Trajectory Planner<br><small>desired position, velocity, acceleration</small></div>
+          <div class="arrow">→</div>
+          <div class="block">Position Controller<br><small>desired thrust + orientation</small></div>
+          <div class="arrow">→</div>
+          <div class="block">Attitude Controller<br><small>roll, pitch, yaw torques</small></div>
+          <div class="arrow">→</div>
+          <div class="block">Motor Mixer<br><small>PWM / RPM commands</small></div>
+          <div class="arrow">→</div>
+          <div class="block">Quadrotor Dynamics<br><small>new state feedback</small></div>
+        </div>
+        <div class="grid two formula-grid">
+          <article class="formula-card reveal">
+            <h3>Outer-loop PD control</h3>
+            <p class="formula">T<sub>d</sub> = K<sub>p</sub>e<sub>r</sub> + K<sub>d</sub>e<sub>v</sub> + ma<sub>d</sub> + F<sub>g</sub></p>
+            <p>The position controller combines position error, velocity error, desired feedforward acceleration, and gravity compensation.</p>
+          </article>
+          <article class="formula-card reveal">
+            <h3>Inner-loop attitude control</h3>
+            <p class="formula">τ = -K<sub>p,att</sub>e<sub>R</sub> + K<sub>d,att</sub>e<sub>ω</sub></p>
+            <p>The attitude controller uses rotation error and angular velocity error to compute torques for orientation tracking.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="phases" class="section container">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Project Development</p>
+        <h2>Built in three phases</h2>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item reveal">
+          <span>01</span>
+          <div>
+            <h3>Phase 1: PD Controller</h3>
+            <p>Implemented position and attitude control in <strong>DSLPIDControl.py</strong>. The controller was tuned to reach randomly assigned destination positions and hover with an expected settling time of about 5 seconds.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <span>02</span>
+          <div>
+            <h3>Phase 2: Trajectory Mapping</h3>
+            <p>Generated circular and diamond trajectories, including 3D plots, 2D planar projections, and position-velocity-acceleration profiles for each path.</p>
+          </div>
+        </div>
+        <div class="timeline-item reveal">
+          <span>03</span>
+          <div>
+            <h3>Phase 3: Trajectory Tracking</h3>
+            <p>Integrated the trajectory generator with the PD controller and evaluated tracking performance for baseline gains, reduced gains, and shorter trajectory durations.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="trajectories" class="section container">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Trajectory Design</p>
+        <h2>Two paths were used to test different motion requirements.</h2>
+      </div>
+      <div class="grid two">
+        <article class="trajectory-card reveal">
+          <div class="mini-plot circle-plot"></div>
+          <h3>Circular trajectory</h3>
+          <p>A smooth path with continuous curvature. This trajectory tests whether the controller can track continuous changes in velocity and acceleration.</p>
+        </article>
+        <article class="trajectory-card reveal">
+          <div class="mini-plot diamond-plot"></div>
+          <h3>Diamond trajectory</h3>
+          <p>A piecewise linear path with sharp corners. This trajectory tests how the controller reacts to abrupt direction changes and velocity discontinuities.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="experiments" class="section dark-section">
+      <div class="container">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Experiments</p>
+          <h2>Tracking performance was studied by changing gains and trajectory duration.</h2>
+        </div>
+        <div class="grid three">
+          <article class="card reveal">
+            <h3>Baseline gains</h3>
+            <p>Position gains used Kp = [0.2, 0.2, 0.25] and Kd = [0.49, 0.49, 0.14]. Attitude gains used Kp,att = [70000, 70000, 50000] and Kd,att = [8000, 8000, 7200].</p>
+          </article>
+          <article class="card reveal">
+            <h3>Gain reduction tests</h3>
+            <p>Kp and Kd were reduced by 30%, 40%, and 50% to observe how proportional and derivative action affect tracking accuracy, overshoot, and response speed.</p>
+          </article>
+          <article class="card reveal">
+            <h3>Duration tests</h3>
+            <p>Trajectory duration was shortened to increase velocity and acceleration requirements. Faster trajectories pushed the controller closer to its limits.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="results" class="section container">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Key Results</p>
+        <h2>Derivative gain had the strongest effect on tracking performance.</h2>
+      </div>
+      <div class="table-wrap reveal">
+        <table>
+          <thead>
+            <tr><th>Trajectory</th><th>Baseline RMSE</th><th>Kd reduced 50%</th><th>Kp reduced 50%</th><th>Main observation</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Diamond</td><td>0.0092 m</td><td>0.0141 m</td><td>0.0124 m</td><td>Sharp corners increase sensitivity to velocity changes.</td></tr>
+            <tr><td>Circular</td><td>0.0127 m</td><td>0.0239 m</td><td>0.0146 m</td><td>Continuous curvature made the circle more sensitive to reduced derivative action.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid three result-cards">
+        <article class="card reveal">
+          <h3>Kd reduction</h3>
+          <p>Lower derivative gain reduced damping. The circular trajectory RMSE increased from 0.0127 m to 0.0239 m, an 88% increase.</p>
+        </article>
+        <article class="card reveal">
+          <h3>Kp reduction</h3>
+          <p>Lower proportional gain caused slower response and more steady-state error, especially in z, but the effect was less severe than Kd reduction.</p>
+        </article>
+        <article class="card reveal">
+          <h3>Shorter durations</h3>
+          <p>Reducing trajectory time increased acceleration requirements. The diamond path became unstable near sharp vertices, and the circular path approached actuator limits at faster speeds.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="conclusion" class="section container">
+      <div class="conclusion reveal">
+        <p class="eyebrow">Conclusion</p>
+        <h2>What I learned</h2>
+        <p>
+          The cascaded PD controller successfully tracked both circular and diamond trajectories with low baseline error. The experiments showed that derivative gain is critical for damping and velocity-error correction, while proportional gain mainly affects response speed and steady-state error. Faster trajectories demand larger control inputs, so controller performance depends not only on gain tuning but also on the dynamic feasibility of the desired path.
+        </p>
+      </div>
+    </section>
+
+    <section id="repo" class="section container">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Repository Structure</p>
+        <h2>Project files</h2>
+      </div>
+      <div class="repo-grid reveal">
+        <div class="repo-card"><strong>Phase 1: PD controller</strong><span>DSLPIDControl.py</span></div>
+        <div class="repo-card"><strong>Phase 2: Trajectory Mapping</strong><span>circle.py · diamond.py · plotresults.py</span></div>
+        <div class="repo-card"><strong>Phase 3: Trajectory Tracking</strong><span>DSLPIDControl-1.py · circle-1.py · diamond-1.py</span></div>
+        <div class="repo-card"><strong>Documentation</strong><span>README.md · project reports</span></div>
+      </div>
+      <div class="code-card reveal">
+        <button class="copy-btn" data-copy="git clone https://github.com/RheaBhalekar24/Quadrotor-PD-Control.git&#10;cd Quadrotor-PD-Control">Copy</button>
+        <pre><code>git clone https://github.com/RheaBhalekar24/Quadrotor-PD-Control.git
+cd Quadrotor-PD-Control</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <p>© <span id="year"></span> Rhea Bhalekar · Quadrotor PD Control</p>
+      <a href="https://github.com/RheaBhalekar24/Quadrotor-PD-Control" target="_blank" rel="noreferrer">GitHub Repository</a>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
