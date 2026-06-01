@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Einstein Vision | Autonomous Driving 3D Visualization</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="#top">Einstein Vision</a>
+    <div class="links">
+      <a href="#problem">Problem</a>
+      <a href="#solution">Solution</a>
+      <a href="#videos">Videos</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#gallery">Gallery</a>
+    </div>
+  </nav>
+
+  <header id="top" class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <p class="eyebrow">RBE 549 · Autonomous Driving Perception · Blender Rendering</p>
+      <h1>Einstein Vision</h1>
+      <p class="subtitle">A self-driving vehicle visualization system that transforms front-camera driving videos into structured perception data and renders a 3D driving scene with lanes, vehicles, traffic lights, pedestrians, signs, depth, motion, brake lights, and indicators.</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#videos">Watch Videos</a>
+        <a class="btn secondary" href="#gallery">View Results</a>
+      </div>
+    </div>
+    <div class="hero-card">
+      <img src="assets/images/final_blender_scene.png" alt="Final Blender-rendered autonomous driving scene">
+      <p>Final rendered scene from perception outputs</p>
+    </div>
+  </header>
+
+  <main>
+    <section id="problem" class="section split">
+      <div>
+        <p class="section-label">Problem Statement</p>
+        <h2>Driving videos contain useful information, but raw frames are not enough for planning or debugging.</h2>
+      </div>
+      <div class="card text-card">
+        <p>Autonomous driving systems need to understand more than just “there is a car.” They need lanes, object classes, vehicle pose, traffic-light state, road signs, pedestrian position, brake lights, indicators, and motion direction.</p>
+        <p>The challenge is that these outputs usually come from different models and formats. Einstein Vision solves this by merging detections into a unified JSON representation, converting 2D detections into 3D coordinates, and rendering the complete scene in Blender.</p>
+      </div>
+    </section>
+
+    <section id="solution" class="section dark-panel">
+      <div class="section-intro center">
+        <p class="section-label">Solution</p>
+        <h2>One pipeline from video perception to 3D scene visualization.</h2>
+        <p>The system detects road elements, stores them frame-by-frame, estimates depth, and creates a visual dashboard-style scene for easier interpretation.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature"><span>01</span><h3>Detect</h3><p>Mask R-CNN, YOLO, DETIC, YOLO3D, EasyOCR, and RAFT are used for lanes, vehicles, lights, signs, pose, text, and motion.</p></article>
+        <article class="feature"><span>02</span><h3>Unify</h3><p>Outputs are assembled into a single 2D JSON containing objects, lanes, signs, vehicle states, and traffic-light states.</p></article>
+        <article class="feature"><span>03</span><h3>Lift to 3D</h3><p>Depth Anything V2 and camera intrinsics convert object centroids and lane points into 3D scene coordinates.</p></article>
+        <article class="feature"><span>04</span><h3>Render</h3><p>Blender places assets, lanes, traffic lights, cars, cones, pedestrians, and state indicators into a navigable 3D scene.</p></article>
+      </div>
+    </section>
+
+    <section id="videos" class="section">
+      <div class="section-intro center">
+        <p class="section-label">Videos</p>
+        <h2>Visualization videos</h2>
+        <p>These videos are embedded directly in the website and show the rendered output generated from the perception pipeline.</p>
+      </div>
+      <div class="video-grid">
+        <article class="video-card">
+          <!-- <video controls preload="metadata" poster="assets/images/video_seq5_poster.jpg">
+            <source src="https://drive.google.com/file/d/1UBjm7TK6ktPeS2qnxzySjN0cl-RB1kqX/view?usp=drive_link" type="video/mp4" />
+          </video> -->
+          <div style="position: relative; width: 100%; max-width: 800px; margin: auto;">
+              <iframe 
+                  src="https://drive.google.com/file/d/1UBjm7TK6ktPeS2qnxzySjN0cl-RB1kqX/preview" 
+                  width="100%" 
+                  height="300" 
+                  allow="autoplay" 
+                  frameborder="0" 
+                  allowfullscreen>
+              </iframe>
+          </div>
+          <div class="video-copy">
+            <h3>Sequence 5 Render</h3>
+            <p>Shows the multi-frame Blender visualization with the ego vehicle, surrounding vehicles, cones, lanes, and object placement across time.</p>
+          </div>
+        </article>
+        <article class="video-card">
+          <!-- <video controls preload="metadata" poster="assets/images/video_custom_poster.jpg">
+            <source src="assets/videos/out_videocustom.mp4" type="video/mp4" />
+          </video> -->
+          <div style="position: relative; width: 100%; max-width: 800px; margin: auto;">
+              <iframe 
+                  src="https://drive.google.com/file/d/1jfAoEq8-gfQiJojpL_MMeIR1_S7wt9aS/preview" 
+                  width="100%" 
+                  height="300" 
+                  allow="autoplay" 
+                  frameborder="0" 
+                  allowfullscreen>
+              </iframe>
+          </div>
+          <div class="video-copy">
+            <h3>Custom Output Video</h3>
+            <p>Demonstrates the rendered scene style using the 3D JSON output, Blender assets, road geometry, and detected traffic elements.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="pipeline" class="section">
+      <div class="section-intro center">
+        <p class="section-label">Pipeline</p>
+        <h2>How Einstein Vision works</h2>
+      </div>
+      <div class="pipeline-grid">
+        <div class="pipeline-step"><b>1. Input video</b><p>Front-view driving footage is processed frame-by-frame.</p></div>
+        <div class="pipeline-step"><b>2. Perception models</b><p>Lane detection, vehicle detection, traffic-light state, road signs, speed-limit OCR, vehicle pose, pedestrian pose, and optical flow are extracted.</p></div>
+        <div class="pipeline-step"><b>3. Unified JSON</b><p>Different outputs are merged into one clean structure with frame IDs, object classes, 2D boxes, states, and metadata.</p></div>
+        <div class="pipeline-step"><b>4. Depth estimation</b><p>A monocular depth map is produced and normalized to approximate real-world distances.</p></div>
+        <div class="pipeline-step"><b>5. 3D conversion</b><p>Camera intrinsics project object centroids from image coordinates into 3D coordinates.</p></div>
+        <div class="pipeline-step"><b>6. Blender render</b><p>3D assets are placed into a scene, rendered frame-by-frame, and exported as images or videos.</p></div>
+      </div>
+    </section>
+
+    <section class="section media-feature">
+      <div class="media-text">
+        <p class="section-label">Detection Examples</p>
+        <h2>The system extracts scene structure before rendering.</h2>
+        <p>Lane masks, vehicle bounding boxes, depth maps, DETIC segmentation, cones, speed signs, and traffic objects are converted into a format that Blender can understand.</p>
+      </div>
+      <div class="media-mosaic">
+        <img src="assets/images/lane_detection.png" alt="Lane detection output">
+        <img src="assets/images/yolo_vehicle_detection.png" alt="YOLO vehicle detection output">
+        <img src="assets/images/depth_map.png" alt="Depth map output">
+        <img src="assets/images/detic_vehicle_scene.png" alt="DETIC vehicle and object classification output">
+      </div>
+    </section>
+
+    <section id="gallery" class="section">
+      <div class="section-intro center">
+        <p class="section-label">Gallery</p>
+        <h2>Images used in the project website</h2>
+        <p>Each visual represents one part of the perception-to-rendering pipeline.</p>
+      </div>
+      <div class="gallery">
+        <figure><img src="assets/images/lane_detection.png" alt="Lane detection"><figcaption><b>Lane detection:</b> Mask R-CNN identifies divider and solid lanes, then the lane curves are stored for rendering.</figcaption></figure>
+        <figure><img src="assets/images/yolo_vehicle_detection.png" alt="Vehicle detection"><figcaption><b>Vehicle detection:</b> YOLO detects cars and produces bounding boxes for downstream scene assembly.</figcaption></figure>
+        <figure><img src="assets/images/depth_map.png" alt="Depth map"><figcaption><b>Depth estimation:</b> Depth Anything V2 estimates scene depth from a single camera frame.</figcaption></figure>
+        <figure><img src="assets/images/basic_blender_scene.png" alt="Basic Blender scene"><figcaption><b>Initial 3D render:</b> Detected objects are positioned in Blender as a first 3D scene reconstruction.</figcaption></figure>
+        <figure><img src="assets/images/detic_vehicle_scene.png" alt="DETIC detection"><figcaption><b>Object classification:</b> DETIC improves flexible classification for cars, trucks, poles, signs, and street objects.</figcaption></figure>
+        <figure><img src="assets/images/final_blender_scene.png" alt="Final Blender scene"><figcaption><b>Final visualization:</b> The output scene includes cars, lanes, cones, and pedestrians in a rendered 3D environment.</figcaption></figure>
+        <figure><img src="assets/images/speed_limit_detection.png" alt="Speed limit detection"><figcaption><b>Speed-limit detection:</b> OCR and bounding boxes identify the numerical speed sign value.</figcaption></figure>
+        <figure><img src="assets/images/cone_detection.png" alt="Traffic cone detection"><figcaption><b>Miscellaneous objects:</b> Cones, trucks, and other road objects are included for richer scene understanding.</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="section dark-panel">
+      <div class="section-intro center">
+        <p class="section-label">Why this matters</p>
+        <h2>A clearer interface for autonomous-driving perception.</h2>
+        <p>Instead of looking at many separate model outputs, Einstein Vision creates one interpretable scene. This makes debugging perception, checking object states, and communicating the system behavior much easier.</p>
+      </div>
+      <div class="code-grid">
+        <div class="code-card"><h3>assemble_2d_json.py</h3><p>Merges detections into unified 2D JSON.</p></div>
+        <div class="code-card"><h3>create3D_json.py</h3><p>Projects 2D detections into 3D using depth and camera calibration.</p></div>
+        <div class="code-card"><h3>blender_visualizer.py</h3><p>Creates the Blender road scene, assets, lights, lanes, and objects.</p></div>
+        <div class="code-card"><h3>single / multi frame visualizer</h3><p>Renders one frame or a full video sequence.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Einstein Vision · Perception + Depth + JSON + Blender Visualization</p>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>
