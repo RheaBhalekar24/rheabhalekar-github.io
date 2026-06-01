@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Car Detection YOLO | Aerial Vehicle Detection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="#home">YOLO<span>Cars</span></a>
+    <nav>
+      <a href="#problem">Problem</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#results">Results</a>
+      <a href="#code">Code</a>
+    </nav>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Computer Vision • Object Detection • Aerial Data</p>
+        <h1>Car Detection using YOLO on drone-style aerial imagery</h1>
+        <p class="hero-text">
+          This project builds a vehicle detection pipeline for overhead urban scenes. It prepares aerial RGB data captured at multiple heights, converts vehicle labels into 2D bounding boxes, trains a YOLO11 model, and visualizes predicted car detections on unseen frames.
+        </p>
+        <div class="hero-actions">
+          <a class="btn primary" href="https://github.com/RheaBhalekar24/Car_detection_YOLO" target="_blank" rel="noreferrer">View GitHub Repo</a>
+          <a class="btn secondary" href="#pipeline">See Pipeline</a>
+        </div>
+      </div>
+      <div class="hero-card">
+        <img src="assets/hero-detection.jpg" alt="YOLO car detection in aerial city scene" />
+        <div class="image-caption">Detected vehicles highlighted with YOLO bounding boxes</div>
+      </div>
+    </section>
+
+    <section class="stats" aria-label="project highlights">
+      <article><strong>20m / 50m / 80m</strong><span>multi-altitude aerial data</span></article>
+      <article><strong>YOLO11-L</strong><span>object detection backbone</span></article>
+      <article><strong>2D Boxes</strong><span>converted from 3D annotations</span></article>
+      <article><strong>Python</strong><span>end-to-end training pipeline</span></article>
+    </section>
+
+    <section id="problem" class="section two-col">
+      <div>
+        <p class="eyebrow">Problem Statement</p>
+        <h2>Detect small vehicles from challenging overhead views</h2>
+      </div>
+      <p>
+        Aerial car detection is harder than regular dashcam detection because the same object appears at different scales depending on altitude. Vehicles can be tiny, partially hidden by trees or shadows, and viewed from steep angles. The goal is to train a detector that can identify cars across simulated urban scenes and produce bounding boxes suitable for monitoring traffic, road usage, and autonomous aerial perception.
+      </p>
+    </section>
+
+    <section id="pipeline" class="section pipeline-section">
+      <div class="section-heading">
+        <p class="eyebrow">Solution Pipeline</p>
+        <h2>From raw aerial frames to predicted detections</h2>
+      </div>
+      <div class="pipeline-grid">
+        <article>
+          <span>01</span>
+          <h3>Prepare dataset</h3>
+          <p>Images from 20m, 50m, and 80m folders are combined into a unified dataset while preserving altitude information in the filenames.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Convert labels</h3>
+          <p>The data loader converts 3D vehicle annotations into 2D bounding boxes that YOLO can learn from.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Train YOLO</h3>
+          <p>The training script uses the dataset YAML and YOLO11-L weights to fine-tune the detector for aerial car detection.</p>
+        </article>
+        <article>
+          <span>04</span>
+          <h3>Evaluate + visualize</h3>
+          <p>Evaluation and prediction scripts generate output images with bounding boxes so performance can be inspected qualitatively.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="results" class="section results-section">
+      <div class="section-heading">
+        <p class="eyebrow">Detection Results</p>
+        <h2>Best sample visualizations</h2>
+        <p>These selected outputs show detections across different camera heights, road layouts, shadows, and vehicle scales.</p>
+      </div>
+      <div class="gallery">
+        <figure>
+          <img src="assets/aerial-detection.jpg" alt="Top-down YOLO vehicle detection" />
+          <figcaption>Top-down view with compact vehicles</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/multi-height-detection.jpg" alt="Multiple car detections in aerial neighborhood scene" />
+          <figcaption>Multiple detections near residential roads</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/wide-road-detection.jpg" alt="Wide aerial road scene with detection box" />
+          <figcaption>Long-road scene with small target scale</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/hero-detection.jpg" alt="Perspective aerial city scene with YOLO detection" />
+          <figcaption>Perspective view with urban occlusion</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="code" class="section code-section">
+      <div class="section-heading">
+        <p class="eyebrow">Repository Structure</p>
+        <h2>Key files and what they do</h2>
+      </div>
+      <div class="code-grid">
+        <div><code>ml_project_part1.py</code><p>Creates the data loader and converts 3D bounding boxes to 2D boxes.</p></div>
+        <div><code>data_handle.py</code><p>Combines 20m, 50m, and 80m data and performs the train/validation split.</p></div>
+        <div><code>part1_train.py</code><p>Trains the YOLO model on the prepared aerial dataset.</p></div>
+        <div><code>part1_eval.py</code><p>Evaluates the trained detector.</p></div>
+        <div><code>images10_predict.py</code><p>Runs prediction on randomly selected images and saves output visualizations.</p></div>
+        <div><code>visualise.py</code><p>Displays a single image from the dataset for quick verification.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Car Detection YOLO · Built for aerial vehicle detection</p>
+    <a href="https://github.com/RheaBhalekar24/Car_detection_YOLO" target="_blank" rel="noreferrer">GitHub</a>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyAutoPano Phase 2 | Deep Learning Homography Estimation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="#top">MyAutoPano <span>Phase 2</span></a>
+    <button class="menu-btn" aria-label="Open navigation">☰</button>
+    <div class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#method">Method</a>
+      <a href="#models">Models</a>
+      <a href="#results">Results</a>
+      <a href="#code">Code</a>
+    </div>
+  </nav>
+
+  <header id="top" class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">RBE/CS 549 · Geometric Computer Vision</p>
+      <h1>Deep Learning Based Panorama Stitching</h1>
+      <p class="lead">Phase 2 of MyAutoPano replaces hand-crafted feature matching with a CNN that predicts homography corner offsets from image patch pairs. The predicted transformation is then used to warp and stitch images into a panorama.</p>
+      <div class="hero-actions">
+        <a href="#method" class="btn primary">View pipeline</a>
+        <a href="#results" class="btn ghost">See results</a>
+      </div>
+    </div>
+    <div class="hero-card">
+      <img src="assets/images/supervised-unityhall.png" alt="Supervised stitching result on Unity Hall" />
+      <div class="caption">Supervised stitching output on Unity Hall test case</div>
+    </div>
+  </header>
+
+  <main>
+    <section id="problem" class="section two-col">
+      <div>
+        <p class="eyebrow">Problem statement</p>
+        <h2>Estimate image-to-image geometry without manually matching features</h2>
+      </div>
+      <div class="text-block">
+        <p>The goal of Phase 2 is to learn the homography between two related image patches. Instead of detecting corners, building descriptors, matching features, and running RANSAC, a neural network receives two stacked grayscale patches, <strong>P<sub>A</sub></strong> and <strong>P<sub>B</sub></strong>, and predicts the 8 values of <strong>H4pt</strong>: the x-y displacement of the four patch corners.</p>
+        <p>This output is useful because a four-corner displacement can be converted into a 3×3 homography matrix. That matrix can warp one image into the coordinate frame of the other image, enabling panorama stitching.</p>
+      </div>
+    </section>
+
+    <section id="method" class="section">
+      <p class="eyebrow">Pipeline</p>
+      <h2>From patch generation to stitched panorama</h2>
+      <div class="pipeline">
+        <article>
+          <span>01</span>
+          <h3>Generate patch pairs</h3>
+          <p>Images are resized, converted to grayscale, and cropped into 128×128 patches. Random corner perturbations create paired patches with known ground-truth homography offsets.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Train HomographyNet</h3>
+          <p>A CNN takes the two-channel stacked patch input and regresses 8 corner-offset values representing the motion of the four crop corners.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Convert H4pt to H</h3>
+          <p>For the unsupervised setup, Tensor DLT converts predicted corner offsets into a 3×3 homography matrix.</p>
+        </article>
+        <article>
+          <span>04</span>
+          <h3>Warp and stitch</h3>
+          <p>The estimated homography warps the image into a common frame. The warped result is placed on a canvas to produce the final panorama.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="models" class="section model-grid">
+      <div class="model-card">
+        <h2>Supervised homography model</h2>
+        <p>The supervised model directly compares the predicted H4pt offsets with labeled H4pt ground truth. The training code builds mini-batches by loading <code>P_A</code>, <code>P_B</code>, and the corresponding JSON label, stacks the two patches, and optimizes the CNN using the homography regression loss.</p>
+        <ul>
+          <li>Input: 2 × 128 × 128 grayscale patch pair</li>
+          <li>Output: 8 corner displacement values</li>
+          <li>Optimizer: SGD with momentum</li>
+          <li>Learning rate: 0.005 with scheduler decay</li>
+        </ul>
+      </div>
+      <div class="model-card alt">
+        <h2>Unsupervised homography model</h2>
+        <p>The unsupervised model uses the same network output, but the loss is image-based. Predicted H4pt is converted to a homography using Tensor DLT, then <code>warp_perspective</code> generates a reconstructed patch. Photometric L1 loss compares the warped patch against the target patch.</p>
+        <ul>
+          <li>Input: stacked patch pair and source corners</li>
+          <li>Output: H4pt → Tensor DLT → 3×3 homography</li>
+          <li>Optimizer: AdamW</li>
+          <li>Loss: photometric L1 reconstruction loss</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section architecture">
+      <div>
+        <p class="eyebrow">Architecture</p>
+        <h2>CNN regressor for homography parameters</h2>
+        <p>The network contains eight convolutional layers with ReLU activations and BatchNorm. MaxPooling reduces spatial size after groups of convolutional layers. The flattened feature map passes through a 1024-unit fully connected layer and a final 8-value output layer.</p>
+      </div>
+      <div class="arch-box">
+        <div>2-channel patch input</div><span>↓</span>
+        <div>Conv + BN + ReLU blocks</div><span>↓</span>
+        <div>MaxPool feature compression</div><span>↓</span>
+        <div>Dropout regularization</div><span>↓</span>
+        <div>FC 1024 → FC 8</div>
+      </div>
+    </section>
+
+    <section id="results" class="section">
+      <p class="eyebrow">Results</p>
+      <h2>Training behavior and stitching outputs</h2>
+      <div class="result-grid">
+        <figure>
+          <img src="assets/images/supervised-loss.png" alt="Supervised train and validation loss curves" />
+          <figcaption><strong>Supervised loss:</strong> both training and validation losses decrease rapidly before flattening, showing that the model learns a stable mapping from patch pairs to corner offsets.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/images/unsupervised-loss.png" alt="Unsupervised train and validation loss curves" />
+          <figcaption><strong>Unsupervised loss:</strong> the photometric loss remains low but oscillatory, indicating that the reconstruction objective did not produce strong geometric learning.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/images/corner-comparison.png" alt="Corner prediction comparison on base image" />
+          <figcaption><strong>Corner prediction comparison:</strong> supervised predictions are compared with unsupervised predictions, perturbed corners, random crop corners, and classical homography.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/images/supervised-unityhall.png" alt="Supervised Unity Hall stitching result" />
+          <figcaption><strong>Supervised stitching:</strong> the model captures some rotational alignment but still struggles with translation, leaving large black canvas regions.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/images/unsupervised-unityhall.png" alt="Unsupervised Unity Hall stitching result" />
+          <figcaption><strong>Unsupervised stitching:</strong> the output shows weaker transformation learning and less effective stitching than the supervised model.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/images/unsupervised-unityhall-wide.png" alt="Wide unsupervised Unity Hall stitching result" />
+          <figcaption><strong>Final observation:</strong> deep homography estimation was promising for rotation, but translation handling needs improvement for cleaner panoramas.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="code" class="section code-section">
+      <p class="eyebrow">Implementation</p>
+      <h2>Key files used in the project</h2>
+      <div class="code-grid">
+        <a href="assets/code/Train.py" download>
+          <h3>Train.py</h3>
+          <p>Batch generation, supervised training, unsupervised Tensor DLT, photometric loss, checkpoints, and TensorBoard logs.</p>
+        </a>
+        <a href="assets/code/Network.py" download>
+          <h3>Network.py</h3>
+          <p>HomographyNet CNN definitions, supervised model, updated supervised model, and regression loss function.</p>
+        </a>
+        <a href="assets/code/Test.py" download>
+          <h3>Test.py</h3>
+          <p>Loads trained checkpoints, evaluates patch pairs on validation data, predicts H4pt, and reports average loss.</p>
+        </a>
+      </div>
+    </section>
+
+    <section class="section conclusion">
+      <h2>Conclusion</h2>
+      <p>The Phase 2 system demonstrates how homography estimation can be learned from data. The supervised model successfully reduces loss and captures meaningful rotation, but the final stitching results show that translation remains difficult. The unsupervised model, trained using photometric reconstruction loss, did not learn a strong enough transformation for reliable stitching. Future improvements could include stronger data augmentation, multi-scale training, better photometric masking, and explicit translation-aware loss terms.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>MyAutoPano Phase 2 · Deep Learning Homography Estimation · Rhea Bhalekar</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
