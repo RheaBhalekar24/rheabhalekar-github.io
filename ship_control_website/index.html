@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Control Allocation via Deep Neural Networks</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero" id="top">
+    <nav class="nav">
+      <a class="brand" href="#top">Ship Control Allocation</a>
+      <div class="nav-links">
+        <a href="#problem">Problem</a>
+        <a href="#method">Method</a>
+        <a href="#loss">Losses</a>
+        <a href="#results">Results</a>
+        <a href="#code">Code</a>
+      </div>
+    </nav>
+
+    <section class="hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">RBE 577 · Machine Learning for Robotics</p>
+        <h1>Constrained Control Allocation for Dynamic Ship Positioning using Deep Neural Networks</h1>
+        <p class="lead">
+          This project studies how a neural network can learn to allocate desired ship forces and moments
+          into feasible thruster commands while respecting actuator limits, rate constraints, forbidden azimuth sectors,
+          and power-related penalties.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#method">Explore Methodology</a>
+          <a class="button secondary" href="assets/docs/final-report.pdf" target="_blank">View Report</a>
+        </div>
+      </div>
+      <div class="hero-card">
+        <h2>Core mapping</h2>
+        <p class="math">τ = [surge, sway, yaw]</p>
+        <span>Desired generalized forces</span>
+        <div class="arrow">↓</div>
+        <p class="math">u = [F₁, F₂, α₂, F₃, α₃]</p>
+        <span>Thruster forces and azimuth angles</span>
+      </div>
+    </section>
+  </header>
+
+  <main>
+    <section class="section" id="problem">
+      <div class="section-head">
+        <p class="eyebrow">Problem Statement</p>
+        <h2>Why control allocation matters</h2>
+      </div>
+      <div class="two-col">
+        <div>
+          <p>
+            In dynamic positioning, the high-level controller asks for a force/moment vector that keeps a ship at a
+            desired pose. The control allocation layer converts that request into individual thruster commands.
+            The challenge is that redundant actuators create many possible solutions, but not all solutions are safe,
+            efficient, or feasible.
+          </p>
+          <p>
+            The homework objective was to implement the idea from Skulstad et al. on constrained control allocation
+            using a deep neural network. The dataset was generated synthetically, split into 80% training and 20% test
+            data, and evaluated using training/test loss curves across epochs.
+          </p>
+        </div>
+        <div class="info-panel">
+          <h3>Project goals</h3>
+          <ul>
+            <li>Generate thruster-force and azimuth-angle samples.</li>
+            <li>Compute ship generalized forces τ from actuator commands u.</li>
+            <li>Train an encoder-decoder neural network to infer feasible actuator allocation.</li>
+            <li>Analyze overfitting, regularization, dropout, and individual loss terms.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section dark" id="method">
+      <div class="section-head">
+        <p class="eyebrow">Methodology</p>
+        <h2>Encoder-decoder learning pipeline</h2>
+      </div>
+      <div class="pipeline">
+        <article>
+          <span>01</span>
+          <h3>Generate actuator commands</h3>
+          <p>Random-walk sequences are created for F₁, F₂, F₃, α₂, and α₃ to simulate realistic continuous command changes.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Compute target forces</h3>
+          <p>The generated commands are transformed into τ = [surge, sway, yaw] using the ship thruster geometry.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Train allocation network</h3>
+          <p>An LSTM encoder predicts normalized commands, a tanh layer bounds the output, and a decoder reconstructs τ.</p>
+        </article>
+        <article>
+          <span>04</span>
+          <h3>Evaluate constraints</h3>
+          <p>The total loss combines force accuracy, reconstruction error, command bounds, rate limits, power use, sector constraints, and L2 regularization.</p>
+        </article>
+      </div>
+
+      <div class="architecture-card">
+        <div>
+          <h3>Network architecture</h3>
+          <p>
+            The model uses two LSTM encoder layers with dropout, a dense layer that predicts five actuator commands,
+            tanh normalization followed by rescaling, and two decoder LSTM layers that reconstruct the generalized force vector.
+          </p>
+        </div>
+        <pre><code>Input τ: [surge, sway, yaw]
+Encoder: LSTM → Dropout → LSTM → Dropout → Dense(5)
+Bound: tanh + rescale to physical command ranges
+Decoder: LSTM → Dropout → LSTM → Dropout → Dense(3)
+Output: û and τ̂</code></pre>
+      </div>
+    </section>
+
+    <section class="section" id="loss">
+      <div class="section-head">
+        <p class="eyebrow">Loss Design</p>
+        <h2>Balancing accuracy and feasibility</h2>
+      </div>
+      <div class="loss-grid">
+        <article><b>L0</b><span>Generalized force error from predicted û</span></article>
+        <article><b>L1</b><span>Decoder reconstruction error between τ and τ̂</span></article>
+        <article><b>L2</b><span>Thruster command magnitude violation</span></article>
+        <article><b>L3</b><span>Rate-change penalty for command jumps</span></article>
+        <article><b>L4</b><span>Power consumption minimization</span></article>
+        <article><b>L5</b><span>Forbidden azimuth sector violation</span></article>
+      </div>
+      <div class="callout">
+        <p>
+          The combined objective used manually selected weights:
+          <code>[1e0, 1e0, 1e-1, 1e-7, 1e-5, 1e-1]</code>, with additional L2 parameter regularization.
+          Higher emphasis was placed on force accuracy and decoder reconstruction.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="results">
+      <div class="section-head">
+        <p class="eyebrow">Results</p>
+        <h2>Training behavior and regularization effects</h2>
+      </div>
+      <div class="result-feature">
+        <figure>
+          <img src="assets/images/loss-without-reg-1.png" alt="Training and test loss without regularization" />
+          <figcaption>Without regularization, the test loss begins very high and noisy, while train loss gradually decreases.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/images/tensorboard-train-loss.png" alt="TensorBoard training loss" />
+          <figcaption>TensorBoard shows a steep early loss drop, then convergence near a lower training-loss region.</figcaption>
+        </figure>
+      </div>
+
+      <div class="gallery">
+        <figure>
+          <img src="assets/images/loss-with-reg-dropout.png" alt="Training and test loss with regularization and dropout" />
+          <figcaption>With regularization and dropout, test loss oscillates, suggesting the model struggles to capture a stable mapping.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/images/individual-loss-components.png" alt="Individual loss components" />
+          <figcaption>Individual loss components show L0 and L1 dominate, while several constraint penalties remain comparatively small.</figcaption>
+        </figure>
+        <figure>
+          <img src="assets/images/training-loss-over-epochs.png" alt="Training loss over epochs" />
+          <figcaption>Training loss sharply decreases after the initial epoch spike and then remains close to the lower range.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section dark" id="code">
+      <div class="section-head">
+        <p class="eyebrow">Implementation</p>
+        <h2>Code and reproducibility</h2>
+      </div>
+      <div class="two-col">
+        <div>
+          <p>
+            The implementation is written in PyTorch and logs training with TensorBoard. It generates one million samples,
+            uses a batch size of 1024, trains for 100 epochs with Adam, and saves the best model based on test loss.
+          </p>
+          <div class="link-row">
+            <a class="button primary" href="assets/code/main.py" download>Download main.py</a>
+            <a class="button secondary" href="assets/code/readme.md" download>Download README</a>
+            <a class="button secondary" href="assets/docs/problem-statement.pdf" target="_blank">Problem PDF</a>
+          </div>
+        </div>
+        <pre><code>pip install torch==2.4.0 numpy==1.26.0 matplotlib==3.8.0 torchvision
+python main.py</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Project by Rhea Bhalekar and Rigved Sanku · Dynamic Ship Positioning Control Allocation</p>
+    <a href="#top">Back to top ↑</a>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>
